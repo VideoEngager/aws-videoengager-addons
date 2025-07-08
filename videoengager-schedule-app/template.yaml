@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  videoengager-schedule-app
+
+  SAM Template for videoengager-schedule-app
+
+Parameters:
+  VeBaseURL:
+    Type: String
+    AllowedPattern: .*
+    Default: https://videome.leadsecure.com
+
+  PAK:
+    Type: String
+    AllowedPattern: .+
+  
+  ExternalId:
+    Type: String
+    AllowedPattern: .+
+
+  AmazonInstanceId:
+    Type: String
+    AllowedPattern: .+
+
+  TargetFlowId:
+    Type: String
+    AllowedPattern: .+
+
+  Domain:
+    Type: String
+    AllowedPattern: .+
+
+  AppNameSuffix:
+    Type: String
+    AllowedPattern: .*
+    Default: ""
+
+Resources:
+  ConnectTaskScheduler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs22.x
+      CodeUri: ConnectTaskScheduler
+      Events:
+        ConnectTaskSchedulerApi:
+          Type: Api
+          Properties:
+            Path: /schedule
+            Method: post
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          INSTANCE_ID: !Ref AmazonInstanceId
+          FLOW_ID: !Ref TargetFlowId
+          DOMAIN: !Ref Domain
+          PAK: !Ref PAK
+          VE_BASE_URL: !Ref VeBaseURL
+          EXTERNAL_ID: !Ref ExternalId
+      Policies:
+        - Statement:
+            - Sid: StartTaskContact
+              Effect: Allow
+              Action: connect:StartTaskContact
+              Resource:
+                - !Sub arn:aws:connect:*:${AWS::AccountId}:instance/*
+
+  ConnectSmartVideoAgentSchedule:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs22.x
+      CodeUri: ConnectSmartVideoAgentSchedule
+      Events:
+        ConnectSmartVideoAgentScheduleApi:
+          Type: Api
+          Properties:
+            Path: /connectagentschedule/{param}
+            Method: get
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          DOMAIN: !Ref Domain
+          PAK: !Ref PAK
+          VE_BASE_URL: !Ref VeBaseURL
+          EXTERNAL_ID: !Ref ExternalId
+
+  VideoEngagerScheduleApp:
+    Type: AWS::AppIntegrations::Application
+    Properties:
+      ApplicationSourceConfig:
+        ExternalUrlConfig:
+          AccessUrl: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/connectagentschedule/index.html
+          ApprovedOrigins: 
+            - !Ref VeBaseURL
+      Description: The VideoEngager agent schedule app.
+      Name: !Sub VideoEngager.Schedule${AppNameSuffix}
+      Namespace: !Sub VideoEngager.Schedule${AppNameSuffix}
+      Permissions:
+        - User.Details.View
+        - User.Configuration.View
+        - User.Status.View
+        - Contact.Details.View
+        - Contact.CustomerDetails.View
+        - Contact.Attributes.View
+
+  VideoEngagerScheduleAppAssociation:
+    Type: AWS::Connect::IntegrationAssociation
+    Properties:
+      InstanceId: !Ref AmazonInstanceId
+      IntegrationType: APPLICATION
+      IntegrationArn: !GetAtt VideoEngagerScheduleApp.ApplicationArn
+

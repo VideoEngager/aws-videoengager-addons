@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meeting Scheduler</title>
+    <!-- Cloudscape Design System CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/cloudscape-design/3.0.0/index.css"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Amazon Ember", "Helvetica Neue", Roboto, Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+      }
+
+      .awsui-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .awsui-form-field {
+        margin-bottom: 20px;
+      }
+
+      .awsui-form-field * {
+        box-sizing: border-box;
+      }
+
+      .awsui-form-field label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #16191f;
+        font-size: 14px;
+      }
+
+      .awsui-input {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 8px 12px;
+        border: 1px solid #d5dbdb;
+        border-radius: 4px;
+        font-size: 14px;
+        background-color: #fff;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+
+      .awsui-input:focus {
+        outline: none;
+        border-color: #0972d3;
+        box-shadow: 0 0 0 2px rgba(9, 114, 211, 0.25);
+      }
+
+      .awsui-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        border: 1px solid transparent;
+        min-height: 36px;
+      }
+
+      .awsui-button-primary {
+        background-color: #0972d3;
+        color: #fff;
+        border-color: #0972d3;
+      }
+
+      .awsui-button-primary:hover:not(:disabled) {
+        background-color: #0258a3;
+        border-color: #0258a3;
+      }
+
+      .awsui-button-primary:disabled {
+        background-color: #879596;
+        border-color: #879596;
+        cursor: not-allowed;
+      }
+
+      .awsui-button-secondary {
+        background-color: #fff;
+        color: #0972d3;
+        border-color: #0972d3;
+      }
+
+      .awsui-button-secondary:hover:not(:disabled) {
+        background-color: #f2f6fa;
+      }
+
+      .awsui-container-header {
+        background-color: #fff;
+        border: 1px solid #d5dbdb;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+
+      .awsui-container-content {
+        background-color: #fff;
+        border: 1px solid #d5dbdb;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+
+      .awsui-header {
+        border-bottom: 1px solid #e9ebed;
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+      }
+
+      .awsui-header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        color: #16191f;
+      }
+
+      .awsui-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #16191f;
+      }
+
+      .awsui-section-header {
+        margin: 24px 0 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #16191f;
+        border-bottom: 1px solid #e9ebed;
+        padding-bottom: 8px;
+      }
+
+      .awsui-grid {
+        display: grid;
+        gap: 20px;
+        width: 100%;
+      }
+
+      .awsui-grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      @media (max-width: 768px) {
+        .awsui-grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .awsui-flash {
+        border-radius: 4px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        border: 1px solid;
+        position: relative;
+      }
+
+      .awsui-flash-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+      }
+
+      .awsui-flash-error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+      }
+
+      .awsui-flash-warning {
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+        color: #856404;
+      }
+
+      .awsui-flash-info {
+        background-color: #cce7ff;
+        border-color: #b8daff;
+        color: #004085;
+      }
+
+      .awsui-flash-close {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+      }
+
+      .awsui-flash-close:hover {
+        opacity: 1;
+      }
+
+      .awsui-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #d5dbdb;
+        border-radius: 50%;
+        border-top-color: #0972d3;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .awsui-copy-group {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+      }
+
+      .awsui-copy-input {
+        flex: 1;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: none;
+        background-color: #fafbfc;
+        min-width: 0;
+      }
+
+      .awsui-copy-button {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: none;
+        min-width: 80px;
+      }
+
+      .awsui-value-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      .awsui-value-label:last-child {
+        border-bottom: none;
+      }
+
+      .awsui-value-label-key {
+        font-weight: 600;
+        color: #414d5c;
+      }
+
+      .awsui-value-label-value {
+        color: #16191f;
+      }
+
+      .awsui-notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        width: 320px;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .awsui-loading-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #414d5c;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="awsui-notification-container"></div>
+
+    <div class="awsui-container">
+      <!-- Header -->
+      <div class="awsui-container-header">
+        <div class="awsui-header">
+          <h3>YOUR LOGO HERE</h3>
+        </div>
+      </div>
+
+      <!-- Main Form -->
+      <div id="meetingFormContainer" class="awsui-container-content">
+        <div class="awsui-header">
+          <h2>Schedule Meeting</h2>
+        </div>
+
+        <form id="meetingForm">
+          <!-- Meeting Title -->
+          <div class="awsui-form-field">
+            <label for="meetingTitle">Meeting Title</label>
+            <input
+              type="text"
+              id="meetingTitle"
+              name="meetingTitle"
+              class="awsui-input"
+              placeholder="Enter meeting title"
+            />
+          </div>
+
+          <!-- Date, Time and Duration -->
+          <div class="awsui-grid awsui-grid-2">
+            <!-- Start Time -->
+            <div class="awsui-form-field">
+              <label for="startTime">Start Date & Time</label>
+              <input
+                type="datetime-local"
+                id="startTime"
+                name="startTime"
+                class="awsui-input"
+                required
+              />
+            </div>
+
+            <!-- Duration -->
+            <div class="awsui-form-field">
+              <label for="duration">Duration (minutes)</label>
+              <input
+                type="number"
+                id="duration"
+                name="duration"
+                min="15"
+                max="480"
+                value="30"
+                class="awsui-input"
+                placeholder="30"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Visitor Information -->
+          <div class="awsui-section-header">Visitor Information</div>
+
+          <!-- Visitor Name -->
+          <div class="awsui-form-field">
+            <label for="visitorName">Visitor Name</label>
+            <input
+              type="text"
+              id="visitorName"
+              name="visitorName"
+              class="awsui-input"
+              placeholder="Enter visitor name"
+              required
+            />
+          </div>
+
+          <div class="awsui-grid awsui-grid-2">
+            <div class="awsui-form-field">
+              <label for="visitorEmail">Visitor Email</label>
+              <input
+                type="email"
+                id="visitorEmail"
+                name="visitorEmail"
+                class="awsui-input"
+                placeholder="visitor@example.com"
+                required
+              />
+            </div>
+
+            <div class="awsui-form-field">
+              <label for="visitorPhone">Visitor Phone</label>
+              <input
+                type="tel"
+                id="visitorPhone"
+                name="visitorPhone"
+                class="awsui-input"
+                placeholder="+1234567890"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div style="padding-top: 24px">
+            <button
+              type="submit"
+              id="scheduleBtn"
+              class="awsui-button awsui-button-primary"
+              style="width: 100%"
+            >
+              Schedule Meeting
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Results Container -->
+      <div id="resultsContainer" class="awsui-container-content hidden">
+        <div class="awsui-header">
+          <h2>Meeting Scheduled Successfully!</h2>
+        </div>
+
+        <!-- Meeting Details -->
+        <div class="awsui-section-header">Meeting Details</div>
+        <div
+          style="
+            background-color: #fafbfc;
+            border: 1px solid #e9ebed;
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 24px;
+          "
+        >
+          <div class="awsui-value-label">
+            <span class="awsui-value-label-key">Meeting ID:</span>
+            <span class="awsui-value-label-value" id="meetingId"></span>
+          </div>
+          <div class="awsui-value-label">
+            <span class="awsui-value-label-key">Date:</span>
+            <span class="awsui-value-label-value" id="scheduledDate"></span>
+          </div>
+          <div class="awsui-value-label">
+            <span class="awsui-value-label-key">Duration:</span>
+            <span class="awsui-value-label-value"
+              ><span id="scheduledDuration"></span> minutes</span
+            >
+          </div>
+          <div class="awsui-value-label">
+            <span class="awsui-value-label-key">Visitor:</span>
+            <span class="awsui-value-label-value" id="scheduledVisitor"></span>
+          </div>
+        </div>
+
+        <!-- Meeting URLs -->
+        <div class="awsui-section-header">Meeting URLs</div>
+        <div style="margin-bottom: 16px">
+          <div class="awsui-form-field">
+            <label>Visitor Meeting URL</label>
+            <div class="awsui-copy-group">
+              <input
+                type="text"
+                id="visitorUrl"
+                readonly
+                class="awsui-input awsui-copy-input"
+                placeholder="Visitor URL will appear here"
+              />
+              <button
+                type="button"
+                id="copyVisitorUrl"
+                class="awsui-button awsui-button-secondary awsui-copy-button"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule Another Meeting Button -->
+        <div style="padding-top: 24px">
+          <button
+            type="button"
+            id="scheduleAnotherBtn"
+            class="awsui-button awsui-button-secondary"
+            style="width: 100%"
+          >
+            Schedule Another Meeting
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="awsui-container-content hidden">
+        <div class="awsui-loading-content">
+          <div class="awsui-spinner"></div>
+          <span>Scheduling meeting...</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Configuration - Replace these with your actual values
+      const CONFIG = {
+        lambdaEndpoint: "{{LAMBDA_ENDPOINT}}",
+        agentEmail: "{{AGENT_EMAIL}}",
+      };
+
+      // Application state
+      let currentMeetingData = null;
+
+      // ===========================================
+      // NOTIFICATION SYSTEM
+      // ===========================================
+      function createNotification(message, type = "info", duration = 5000) {
+        const container = document.getElementById("notificationContainer");
+        const notification = document.createElement("div");
+
+        const typeClasses = {
+          success: "awsui-flash-success",
+          error: "awsui-flash-error",
+          warning: "awsui-flash-warning",
+          info: "awsui-flash-info",
+        };
+
+        notification.className = `awsui-flash ${
+          typeClasses[type] || typeClasses.info
+        }`;
+        notification.style.opacity = "0";
+        notification.style.transform = "translateX(100%)";
+        notification.style.transition = "all 0.3s ease-in-out";
+
+        notification.innerHTML = `
+          <div style="padding-right: 20px;">
+            ${message}
+          </div>
+          <button type="button" class="awsui-flash-close" onclick="this.parentElement.remove()">
+            ×
+          </button>
+        `;
+
+        container.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+          notification.style.opacity = "1";
+          notification.style.transform = "translateX(0)";
+        }, 10);
+
+        // Auto remove
+        if (duration > 0) {
+          setTimeout(() => {
+            if (notification.parentElement) {
+              notification.style.opacity = "0";
+              notification.style.transform = "translateX(100%)";
+              setTimeout(() => notification.remove(), 300);
+            }
+          }, duration);
+        }
+
+        return notification;
+      }
+
+      function showSuccess(message, duration = 5000) {
+        return createNotification(message, "success", duration);
+      }
+
+      function showError(message, duration = 7000) {
+        return createNotification(message, "error", duration);
+      }
+
+      // ===========================================
+      // API FUNCTIONS
+      // ===========================================
+      async function callLambdaAPI(data) {
+        try {
+          console.log("Calling API with data:", data);
+
+          const response = await fetch(CONFIG.lambdaEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+          console.log("API Response:", result);
+
+          // Handle the response based on your Lambda's error structure
+          if (!result.success || response.status !== 200) {
+            throw new Error(result.message || "Unknown error occurred");
+          }
+
+          return result;
+        } catch (error) {
+          console.error("API Error:", error);
+
+          // Handle different types of errors
+          if (error.name === "TypeError" && error.message.includes("fetch")) {
+            throw new Error(
+              "Unable to connect to the server. Please check your connection."
+            );
+          }
+
+          showForm();
+          throw error;
+        }
+      }
+
+      // ===========================================
+      // FORM HANDLING
+      // ===========================================
+      function getFormData() {
+        const startTimeValue = document.getElementById("startTime").value;
+
+        if (!startTimeValue) {
+          throw new Error("Please select a start date and time");
+        }
+
+        return {
+          agentEmail: CONFIG.agentEmail,
+          date: new Date(startTimeValue).getTime(),
+          duration: parseInt(document.getElementById("duration").value),
+          visitor: {
+            name: document.getElementById("visitorName").value.trim(),
+            email: document.getElementById("visitorEmail").value.trim(),
+            phone: document.getElementById("visitorPhone").value.trim(),
+            subject: document.getElementById("meetingTitle").value.trim(),
+          },
+        };
+      }
+
+      function validateForm() {
+        const duration = parseInt(document.getElementById("duration").value);
+        const startTime = document.getElementById("startTime").value;
+
+        if (!startTime) {
+          throw new Error("Please select a start date and time");
+        }
+
+        const selectedDate = new Date(startTime);
+        const now = new Date();
+
+        if (selectedDate <= now) {
+          throw new Error("Please select a date in the future");
+        }
+
+        if (!duration || duration < 15) {
+          throw new Error("Meeting duration must be at least 15 minutes");
+        }
+
+        // Check if all required fields are filled
+        const requiredFields = [
+          { id: "visitorName", name: "Visitor Name" },
+          { id: "visitorEmail", name: "Visitor Email" },
+          { id: "visitorPhone", name: "Visitor Phone" },
+        ];
+
+        for (const field of requiredFields) {
+          const value = document.getElementById(field.id).value.trim();
+          if (!value) {
+            throw new Error(`${field.name} is required`);
+          }
+        }
+      }
+
+      function resetForm() {
+        document.getElementById("meetingForm").reset();
+        document.getElementById("duration").value = "30"; // Reset to default
+      }
+
+      // ===========================================
+      // UI STATE MANAGEMENT
+      // ===========================================
+      function showLoading() {
+        document.getElementById("loadingState").classList.remove("hidden");
+        document.getElementById("meetingFormContainer").classList.add("hidden");
+        document.getElementById("resultsContainer").classList.add("hidden");
+      }
+
+      function hideLoading() {
+        document.getElementById("loadingState").classList.add("hidden");
+      }
+
+      function showForm() {
+        document
+          .getElementById("meetingFormContainer")
+          .classList.remove("hidden");
+        document.getElementById("resultsContainer").classList.add("hidden");
+      }
+
+      function showResults(responseData) {
+        currentMeetingData = responseData;
+
+        // Populate result fields
+        document.getElementById("meetingId").textContent =
+          responseData._id || "N/A";
+
+        const startDate = new Date(responseData.date);
+        const endDate = new Date(
+          startDate.getTime() + responseData.duration * 60 * 1000
+        );
+
+        document.getElementById(
+          "scheduledDate"
+        ).textContent = `${startDate.toLocaleString()} - ${endDate.toLocaleString()}`;
+        document.getElementById("scheduledDuration").textContent =
+          responseData.duration || "Unknown";
+        document.getElementById("scheduledVisitor").textContent =
+          responseData.visitor?.name || "Unknown";
+        document.getElementById("visitorUrl").value =
+          responseData.visitor.meetingUrl || "URL not available";
+
+        // Show results
+        document.getElementById("meetingFormContainer").classList.add("hidden");
+        document.getElementById("resultsContainer").classList.remove("hidden");
+
+        // Scroll to results
+        setTimeout(() => {
+          document.getElementById("resultsContainer").scrollIntoView({
+            behavior: "smooth",
+          });
+        }, 100);
+      }
+
+      function setButtonLoading(button, isLoading, loadingText = "Loading...") {
+        if (isLoading) {
+          button.disabled = true;
+          button.innerHTML = `<div class="awsui-spinner"></div>${loadingText}`;
+        } else {
+          button.disabled = false;
+          button.innerHTML =
+            button.getAttribute("data-original-text") || "Submit";
+        }
+      }
+
+      // ===========================================
+      // COPY FUNCTIONALITY
+      // ===========================================
+      async function copyToClipboard(text) {
+        if (!(await tryCopyWithNavigator(text))) {
+          // Fallback method
+          const element = document.createElement("textarea");
+          element.value = text; // Use the actual text value
+          element.setAttribute("readonly", "");
+          element.style.position = "absolute";
+          element.style.left = "-9999px";
+          document.body.appendChild(element);
+          element.select();
+          const copied = document.execCommand("copy");
+          document.body.removeChild(element); // Clean up
+
+          if (!copied) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      async function tryCopyWithNavigator(value) {
+        try {
+          await navigator.clipboard.writeText(value);
+          console.log('Copied to clipboard');
+          return true;
+        } catch (error) {
+          console.error('Error while copying url to clipboard', error);
+          return false;
+        }
+      }
+
+      // ===========================================
+      // EVENT LISTENERS
+      // ===========================================
+      document.addEventListener("DOMContentLoaded", function () {
+        const scheduleBtn = document.getElementById("scheduleBtn");
+        scheduleBtn.setAttribute("data-original-text", scheduleBtn.innerHTML);
+
+        // Form submission
+        document
+          .getElementById("meetingForm")
+          .addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            try {
+              // Validate form
+              validateForm();
+
+              // Get form data
+              const formData = getFormData();
+
+              // Show loading state
+              setButtonLoading(scheduleBtn, true, "Scheduling...");
+              showLoading();
+
+              // Call API
+              const result = await callLambdaAPI(formData);
+
+              // Hide loading
+              hideLoading();
+              setButtonLoading(scheduleBtn, false);
+
+              // Show results
+              showResults(result);
+              showSuccess("Meeting scheduled successfully!");
+            } catch (error) {
+              console.error("Form submission error:", error);
+
+              hideLoading();
+              setButtonLoading(scheduleBtn, false);
+
+              showError(error.message);
+            }
+          });
+
+        // Schedule another meeting button
+        document
+          .getElementById("scheduleAnotherBtn")
+          .addEventListener("click", function () {
+            resetForm();
+            showForm();
+          });
+
+        // Copy visitor URL button
+        document
+          .getElementById("copyVisitorUrl")
+          .addEventListener("click", async function () {
+            const visitorUrl = document.getElementById("visitorUrl").value;
+
+            if (!visitorUrl || visitorUrl === "URL not available") {
+              showError("No URL available to copy");
+              return;
+            }
+
+            const copied = await copyToClipboard(visitorUrl);
+
+            if (copied) {
+              showSuccess("Visitor URL copied to clipboard!");
+            } else {
+              showError("Failed to copy URL. Please copy manually.");
+            }
+          });
+
+        // Set minimum date/time to current time
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById("startTime").min = now
+          .toISOString()
+          .slice(0, 16);
+      });
+
+      // ===========================================
+      // VALIDATION
+      // ===========================================
+
+      // Real-time validation for duration
+      document
+        .getElementById("duration")
+        .addEventListener("input", function () {
+          const duration = parseInt(this.value);
+          if (duration && duration < 15) {
+            this.setCustomValidity("Duration must be at least 15 minutes");
+          } else {
+            this.setCustomValidity("");
+          }
+        });
+
+      // Real-time validation for start time
+      document
+        .getElementById("startTime")
+        .addEventListener("change", function () {
+          const selectedDate = new Date(this.value);
+          const now = new Date();
+
+          if (selectedDate <= now) {
+            this.setCustomValidity("Please select a date in the future");
+          } else {
+            this.setCustomValidity("");
+          }
+        });
+    </script>
+  </body>
+</html>
