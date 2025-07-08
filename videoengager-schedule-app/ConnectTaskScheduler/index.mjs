@@ -104,7 +104,7 @@ function validateAndParseBody(eventBody) {
   let body;
   try {
     body = JSON.parse(eventBody);
-  } catch (parseError) {
+  } catch {
     throw new ValidationError("Invalid JSON format");
   }
   

@@ -508,52 +508,73 @@
       // NOTIFICATION SYSTEM
       // ===========================================
       function createNotification(message, type = "info", duration = 5000) {
-        const container = document.getElementById("notificationContainer");
-        const notification = document.createElement("div");
+        try {
+          const container = document.getElementById("notificationContainer");
+          if (!container) {
+            console.error("Notification container not found");
+            return null;
+          }
 
-        const typeClasses = {
-          success: "awsui-flash-success",
-          error: "awsui-flash-error",
-          warning: "awsui-flash-warning",
-          info: "awsui-flash-info",
-        };
+          const notification = document.createElement("div");
 
-        notification.className = `awsui-flash ${
-          typeClasses[type] || typeClasses.info
-        }`;
-        notification.style.opacity = "0";
-        notification.style.transform = "translateX(100%)";
-        notification.style.transition = "all 0.3s ease-in-out";
+          const typeClasses = {
+            success: "awsui-flash-success",
+            error: "awsui-flash-error",
+            warning: "awsui-flash-warning",
+            info: "awsui-flash-info",
+          };
 
-        notification.innerHTML = `
-          <div style="padding-right: 20px;">
-            ${message}
-          </div>
-          <button type="button" class="awsui-flash-close" onclick="this.parentElement.remove()">
-            ×
-          </button>
-        `;
+          notification.className = `awsui-flash ${
+            typeClasses[type] || typeClasses.info
+          }`;
+          notification.style.opacity = "0";
+          notification.style.transform = "translateX(100%)";
+          notification.style.transition = "all 0.3s ease-in-out";
 
-        container.appendChild(notification);
+          // Sanitize message to prevent XSS
+          const sanitizedMessage = String(message)
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
 
-        // Animate in
-        setTimeout(() => {
-          notification.style.opacity = "1";
-          notification.style.transform = "translateX(0)";
-        }, 10);
+          notification.innerHTML = `
+      <div style="padding-right: 20px;">
+        ${sanitizedMessage}
+      </div>
+      <button type="button" class="awsui-flash-close" onclick="this.parentElement.remove()">
+        ×
+      </button>
+    `;
 
-        // Auto remove
-        if (duration > 0) {
+          container.appendChild(notification);
+
+          // Animate in
           setTimeout(() => {
-            if (notification.parentElement) {
-              notification.style.opacity = "0";
-              notification.style.transform = "translateX(100%)";
-              setTimeout(() => notification.remove(), 300);
-            }
-          }, duration);
-        }
+            notification.style.opacity = "1";
+            notification.style.transform = "translateX(0)";
+          }, 10);
 
-        return notification;
+          // Auto remove
+          if (duration > 0) {
+            setTimeout(() => {
+              if (notification.parentElement) {
+                notification.style.opacity = "0";
+                notification.style.transform = "translateX(100%)";
+                setTimeout(() => {
+                  if (notification.parentElement) {
+                    notification.remove();
+                  }
+                }, 300);
+              }
+            }, duration);
+          }
+
+          return notification;
+        } catch (error) {
+          console.error("Error creating notification:", error);
+          // Fallback to alert if notification system fails
+          alert(`${type.toUpperCase()}: ${message}`);
+          return null;
+        }
       }
 
       function showSuccess(message, duration = 5000) {
@@ -583,23 +604,72 @@
           console.log("API Response:", result);
 
           // Handle the response based on your Lambda's error structure
-          if (!result.success || response.status !== 200) {
-            throw new Error(result.message || "Unknown error occurred");
+          if (!result?.success || response?.status !== 200) {
+            throw new Error(result?.message || "Unknown error occurred");
           }
 
           return result;
         } catch (error) {
           console.error("API Error:", error);
 
-          // Handle different types of errors
-          if (error.name === "TypeError" && error.message.includes("fetch")) {
+          // Handle different types of network errors
+          if (error.name === "TypeError") {
+            // Network-related errors (fetch failures, CORS, DNS, etc.)
+            if (
+              error.message.includes("fetch") ||
+              error.message.includes("Failed to fetch") ||
+              error.message.includes("NetworkError") ||
+              error.message.includes("CORS") ||
+              error.message === "fetch"
+            ) {
+              throw new Error(
+                "Unable to connect to the server. Please check your connection."
+              );
+            }
+
+            // Other TypeError cases
+            if (error.message.includes("JSON")) {
+              throw new Error(
+                "Server returned invalid data. Please try again."
+              );
+            }
+          }
+
+          // Handle AbortError (request timeout)
+          if (error.name === "AbortError") {
+            throw new Error("Request timed out. Please try again.");
+          }
+
+          // Handle specific network error patterns
+          if (
+            error.message.includes("timeout") ||
+            error.message.includes("TIMEOUT")
+          ) {
+            throw new Error("Request timed out. Please try again.");
+          }
+
+          if (
+            error.message.includes("offline") ||
+            error.message.includes("No internet")
+          ) {
             throw new Error(
-              "Unable to connect to the server. Please check your connection."
+              "You appear to be offline. Please check your internet connection."
             );
           }
 
-          showForm();
+          // For parsing errors or other known issues
+          if (error instanceof SyntaxError) {
+            throw new Error("Server returned invalid data. Please try again.");
+          }
+
+          // Re-throw the error as-is if it's already a user-friendly message
+          // or if we don't recognize the error type
           throw error;
+        }
+        finally
+        {
+          // Always call showForm() on any error to return user to form
+          showForm();
         }
       }
 
@@ -645,6 +715,10 @@
           throw new Error("Meeting duration must be at least 15 minutes");
         }
 
+        if (duration > 480) {
+          throw new Error("Meeting duration cannot exceed 8 hours");
+        }
+
         // Check if all required fields are filled
         const requiredFields = [
           { id: "visitorName", name: "Visitor Name" },
@@ -658,8 +732,14 @@
             throw new Error(`${field.name} is required`);
           }
         }
-      }
 
+        // Validate email format
+        const email = document.getElementById("visitorEmail").value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error("Please enter a valid email address");
+        }
+      }
       function resetForm() {
         document.getElementById("meetingForm").reset();
         document.getElementById("duration").value = "30"; // Reset to default
@@ -686,47 +766,104 @@
       }
 
       function showResults(responseData) {
-        currentMeetingData = responseData;
+        try {
+          currentMeetingData = responseData;
 
-        // Populate result fields
-        document.getElementById("meetingId").textContent =
-          responseData._id || "N/A";
+          // Safely populate result fields with fallbacks
+          const meetingIdElement = document.getElementById("meetingId");
+          if (meetingIdElement) {
+            meetingIdElement.textContent = responseData._id || "N/A";
+          }
 
-        const startDate = new Date(responseData.date);
-        const endDate = new Date(
-          startDate.getTime() + responseData.duration * 60 * 1000
-        );
+          const scheduledDateElement = document.getElementById("scheduledDate");
+          if (scheduledDateElement && responseData.date) {
+            try {
+              const startDate = new Date(responseData.date);
+              const endDate = new Date(
+                startDate.getTime() + (responseData.duration || 30) * 60 * 1000
+              );
 
-        document.getElementById(
-          "scheduledDate"
-        ).textContent = `${startDate.toLocaleString()} - ${endDate.toLocaleString()}`;
-        document.getElementById("scheduledDuration").textContent =
-          responseData.duration || "Unknown";
-        document.getElementById("scheduledVisitor").textContent =
-          responseData.visitor?.name || "Unknown";
-        document.getElementById("visitorUrl").value =
-          responseData.visitor.meetingUrl || "URL not available";
+              if (isNaN(startDate.getTime())) {
+                scheduledDateElement.textContent = "Invalid Date";
+              } else {
+                scheduledDateElement.textContent = `${startDate.toLocaleString()} - ${endDate.toLocaleString()}`;
+              }
+            } catch (dateError) {
+              console.error("Date formatting error:", dateError);
+              scheduledDateElement.textContent = "Date formatting error";
+            }
+          }
 
-        // Show results
-        document.getElementById("meetingFormContainer").classList.add("hidden");
-        document.getElementById("resultsContainer").classList.remove("hidden");
+          const scheduledDurationElement =
+            document.getElementById("scheduledDuration");
+          if (scheduledDurationElement) {
+            scheduledDurationElement.textContent =
+              responseData.duration || "Unknown";
+          }
 
-        // Scroll to results
-        setTimeout(() => {
-          document.getElementById("resultsContainer").scrollIntoView({
-            behavior: "smooth",
-          });
-        }, 100);
+          const scheduledVisitorElement =
+            document.getElementById("scheduledVisitor");
+          if (scheduledVisitorElement) {
+            scheduledVisitorElement.textContent =
+              responseData.visitor?.name || "Unknown";
+          }
+
+          const visitorUrlElement = document.getElementById("visitorUrl");
+          if (visitorUrlElement) {
+            visitorUrlElement.value =
+              responseData.visitor?.meetingUrl || "URL not available";
+          }
+
+          // Show results container
+          const meetingFormContainer = document.getElementById(
+            "meetingFormContainer"
+          );
+          const resultsContainer = document.getElementById("resultsContainer");
+
+          if (meetingFormContainer) {
+            meetingFormContainer.classList.add("hidden");
+          }
+
+          if (resultsContainer) {
+            resultsContainer.classList.remove("hidden");
+
+            // Scroll to results with error handling
+            setTimeout(() => {
+              try {
+                if (resultsContainer.scrollIntoView) {
+                  resultsContainer.scrollIntoView({ behavior: "smooth" });
+                }
+              } catch (scrollError) {
+                console.error("Scroll error:", scrollError);
+                // Scrolling failed, but that's not critical
+              }
+            }, 100);
+          }
+        } catch (error) {
+          console.error("Error showing results:", error);
+          showError("Error displaying results. Please try again.");
+          showForm();
+        }
       }
 
       function setButtonLoading(button, isLoading, loadingText = "Loading...") {
-        if (isLoading) {
-          button.disabled = true;
-          button.innerHTML = `<div class="awsui-spinner"></div>${loadingText}`;
-        } else {
-          button.disabled = false;
-          button.innerHTML =
-            button.getAttribute("data-original-text") || "Submit";
+        try {
+          if (!button) {
+            console.error("Button element not found for loading state");
+            return;
+          }
+
+          if (isLoading) {
+            button.disabled = true;
+            button.setAttribute("data-original-text", button.innerHTML);
+            button.innerHTML = `<div class="awsui-spinner"></div>${loadingText}`;
+          } else {
+            button.disabled = false;
+            const originalText = button.getAttribute("data-original-text");
+            button.innerHTML = originalText || "Submit";
+          }
+        } catch (error) {
+          console.error("Error setting button loading state:", error);
         }
       }
 
@@ -756,10 +893,10 @@
       async function tryCopyWithNavigator(value) {
         try {
           await navigator.clipboard.writeText(value);
-          console.log('Copied to clipboard');
+          console.log("Copied to clipboard");
           return true;
         } catch (error) {
-          console.error('Error while copying url to clipboard', error);
+          console.error("Error while copying url to clipboard", error);
           return false;
         }
       }
