@@ -42,7 +42,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: nodejs22.x
-      CodeUri: ConnectTaskScheduler
+      CodeUri: src/ConnectTaskScheduler
       Events:
         ConnectTaskSchedulerApi:
           Type: Api
@@ -72,7 +72,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: nodejs22.x
-      CodeUri: ConnectSmartVideoAgentSchedule
+      CodeUri: src/ConnectSmartVideoAgentSchedule
       Events:
         ConnectSmartVideoAgentScheduleApi:
           Type: Api

@@ -1,0 +1,12 @@
+{
+  "name": "connecttaskscheduler",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "scripts": {
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+  }
+}
