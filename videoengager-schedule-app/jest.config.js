@@ -4,7 +4,7 @@ module.exports = {
     {
       displayName: 'Frontend',
       testEnvironment: 'jsdom',
-      setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+      setupFilesAfterEnv: ['<rootDir>/src/frontend-setup-tests.js'],
       testMatch: [
         '<rootDir>/src/**/*.frontend.(test|spec).js',
         '<rootDir>/src/**/__tests__/**/*.frontend.(test|spec).js',
@@ -12,7 +12,7 @@ module.exports = {
       ],
       collectCoverageFrom: [
         'src/**/*.{js,jsx}',
-        '!src/setupTests.js',
+        '!src/frontend-setup-tests.js',
         '!src/**/*.test.{js,jsx}',
         '!src/**/__tests__/**',
         '!src/**/*.mjs', // Exclude Lambda files
@@ -30,6 +30,7 @@ module.exports = {
     {
       displayName: 'Backend',
       testEnvironment: 'node',
+      setupFilesAfterEnv: ['<rootDir>/src/node-setup-tests.js'],
       testMatch: [
         '<rootDir>/src/**/*.node.(test|spec).js',
         '<rootDir>/src/**/__tests__/**/*.node.(test|spec).js',
@@ -38,7 +39,8 @@ module.exports = {
       collectCoverageFrom: [
         'src/**/*.mjs', // Include Lambda files
         '!src/**/*.test.js',
-        '!src/**/*.node.test.js'
+        '!src/**/*.node.test.js',
+        '!src/node-setup-tests.js',
       ],
       transform: {
         '^.+\\.(js|mjs)$': 'babel-jest'

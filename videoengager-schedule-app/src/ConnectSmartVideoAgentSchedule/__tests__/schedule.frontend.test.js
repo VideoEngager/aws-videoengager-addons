@@ -5,8 +5,8 @@ import {
   fillFormWithValidData,
   removeRequiredFromAllForms,
   validateNotificationMessage,
-} from "../../../testUtils/scheduleUtils";
-import { dumpHtml, waitForClassRemoval } from "../../../testUtils";
+} from "../../testUtils/scheduleUtils";
+import { dumpHtml, waitForClassRemoval } from "../../testUtils";
 
 describe("Form Validation", () => {
   beforeEach(() => {

@@ -43,6 +43,7 @@
   },
   "homepage": "https://github.com/VideoEngager/aws-marketplace-subscription-app#readme",
   "dependencies": {
-    "@babel/preset-env": "^7.28.0"
+    "@babel/preset-env": "^7.28.0",
+    "mime": "^4.0.7"
   }
 }
