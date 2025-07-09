@@ -17,15 +17,20 @@ function GetResponse(mediaType, fileName, agentEmail, apiUrl) {
     let data = fs.readFileSync(fileName, 'utf8');
 
     if (fileName === "schedule.html") {
+      const safeAgentEmail = agentEmail ? agentEmail.toLowerCase() : '';
+  const safeApiUrl = apiUrl || '';
+
       data = data
-        .replace("{{AGENT_EMAIL}}", agentEmail.toLowerCase())
-        .replace("{{LAMBDA_ENDPOINT}}", apiUrl + "/schedule")
+        .replace(/\{\{AGENT_EMAIL\}\}/g, safeAgentEmail.toLowerCase())
+        .replace(/\{\{LAMBDA_ENDPOINT\}\}/g, safeApiUrl + "/schedule")
     }
 
     if (fileName === "bundle.js") {
+      const safeDomain = process.env.DOMAIN || '';
+
       data = data
-        .replace("{{VE_APP_URL}}", "schedule.html")
-        .replace("{{VE_CUST_DOMAIN}}", process.env.DOMAIN)
+        .replace(/\{\{VE_APP_URL\}\}/g, "schedule.html")
+        .replace(/\{\{VE_CUST_DOMAIN\}\}/g, safeDomain)
     }
 
     const response = {
